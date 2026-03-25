@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto text-center">
+            <h2 class="fw-bold text-civic mb-2">Public Issue Reports</h2>
+            <p class="text-secondary fs-5">View and track civic infrastructure reports submitted by citizens.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="card p-4 shadow-sm border-0 bg-white">
+                <form action="/" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label text-muted fw-bold small text-uppercase">Filter by Area</label>
+                        <select name="area" class="form-select">
+                            <option value="">All Areas</option>
+                            <option value="Ravet" {% if current_area=='Ravet' %}selected{% endif %}>Ravet</option>
+                            <option value="Baner" {% if current_area=='Baner' %}selected{% endif %}>Baner</option>
+                            <option value="Aundh" {% if current_area=='Aundh' %}selected{% endif %}>Aundh</option>
+                            <option value="Koregaon Park" {% if current_area=='Koregaon Park' %}selected{% endif %}>Koregaon Park</option>
+                            <option value="Hingewadi" {% if current_area=='Hingewadi' %}selected{% endif %}>Hinjawadi</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label text-muted fw-bold small text-uppercase">Filter by Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="Pending" {% if current_status=='Pending' %}selected{% endif %}>Pending</option>
+                            <option value="In Progress" {% if current_status=='In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Resolved" {% if current_status=='Resolved' %}selected{% endif %}>Resolved</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="submit" class="btn btn-primary w-100 py-2">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-10">
+            <div class="row g-4">
+                {% for issue in issues %}
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center py-3 bg-white">
+                            <span class="small fw-bold text-muted">Ticket #{{ issue['id'] }}</span>
+
+                            {% if issue['status'] == 'Pending' %}
+                            <span class="badge bg-warning text-dark border"><i class="bi bi-clock"></i> Pending</span>
+                            {% elif issue['status'] == 'In Progress' %}
+                            <span class="badge bg-info text-dark border"><i class="bi bi-tools"></i> In Progress</span>
+                            {% else %}
+                            <span class="badge bg-success text-white border"><i class="bi bi-check-circle"></i> Resolved</span>
+                            {% endif %}
+                        </div>
+
+                        {% if issue['image_filename'] %}
+                        <div style="height: 220px; overflow: hidden; background-color: #f8fafc;">
+                            <img src="{{ url_for('static', path='uploads/' + issue['image_filename']) }}" class="w-100 h-100 object-fit-cover" alt="Reported problem image">
+                        </div>
+                        {% else %}
+                        <div style="height: 120px; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center;">
+                            <span class="text-muted"><i class="bi bi-camera"></i> No image provided</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body p-4 d-flex flex-column">
+                            <a href="/issue/{{ issue['id'] }}" class="text-decoration-none text-dark mb-2">
+                                <h5 class="fw-bold mb-1">{{ issue['title'] }}</h5>
+                            </a>
+                            <div class="text-muted small mb-3">
+                                <span><i class="bi bi-geo-alt-fill"></i> {{ issue['area'] }}</span>
+                                <span class="mx-1">&bull;</span>
+                                <span>{{ issue['created_at'] }}</span>
+                            </div>
+                            <p class="text-secondary small mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ issue['description'] }}</p>
+
+                            {% if issue['status'] == 'Resolved' and issue['resolved_image_filename'] %}
+                            <div class="mt-auto p-3 rounded" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;">
+                                <div class="d-flex align-items-center mb-2 text-success fw-bold small">
+                                    <i class="bi bi-check2-square me-2"></i> Official Resolution
+                                </div>
+                                <img src="{{ url_for('static', path='uploads/' + issue['resolved_image_filename']) }}" class="img-fluid rounded border shadow-sm" style="max-height: 100px; object-fit: cover; width: 100%;">
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-footer bg-white px-4 pb-4 pt-0 border-0">
+                            <form action="{{ url_for('upvote', issue_id=issue['id']) }}" method="POST">
+                                {% if issue['id'] in user_votes %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3 w-100">
+                                    <i class="bi bi-hand-thumbs-up-fill text-primary"></i> Support Confirmed ({{ issue['upvote_count'] }})
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-light border btn-sm rounded-pill px-3 w-100 text-dark">
+                                    <i class="bi bi-hand-thumbs-up"></i> I have this issue too ({{ issue['upvote_count'] }})
+                                </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not issues %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox text-muted display-4 mb-3 d-block"></i>
+                <h5 class="text-muted">No reports found matching your criteria.</h5>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .object-fit-cover { object-fit: cover; }
+    .text-dark:hover { color: var(--civic-light-blue) !important; text-decoration: underline; }
+</style>
+{% endblock %}

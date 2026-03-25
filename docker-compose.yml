@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: civic_connect_web
+    ports:
+      - "8000:8000"
+    environment:
+      # Use the new environment variable to store the DB on our named volume
+      - DB_PATH=/data/civic_issues.db
+      - TZ=Asia/Kolkata
+    volumes:
+      # Named volume for SQLite database
+      - civic_db:/data
+      # Named volume for User uploads
+      - civic_uploads:/app/static/uploads
+    restart: unless-stopped
+
+volumes:
+  civic_db:
+  civic_uploads:

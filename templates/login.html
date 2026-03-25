@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container h-100 d-flex align-items-center justify-content-center py-5 mt-5">
+    <div class="col-md-5 col-sm-8 mx-auto">
+        <div class="card border-0 shadow-sm bg-white">
+            <div class="card-header bg-white text-center py-4 border-bottom">
+                <i class="bi bi-person-badge text-civic fs-1 mb-3 d-block"></i>
+                <h4 class="fw-bold text-civic mb-1">Department Login</h4>
+                <p class="text-muted small mb-0">Authorized Civic Officials Only.</p>
+            </div>
+            <div class="card-body p-4 pt-4">
+                <form action="/login" method="POST">
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-bold small">Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="Enter department ID" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-dark fw-bold small">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Enter secure password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                        Log In
+                    </button>
+                    
+                    <div class="text-center mt-3">
+                        <a href="/" class="text-decoration-none text-muted small"><i class="bi bi-arrow-left"></i> Return to Public Feed</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

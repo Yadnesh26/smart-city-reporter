@@ -1,0 +1,150 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto text-center">
+            <h2 class="fw-bold text-civic mb-2">City Service Dashboard</h2>
+            <p class="text-secondary fs-5">View aggregated data on civic reporting and resolution rates.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 bg-white">
+                <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">Total Issues Reported</h6>
+                    <h1 class="display-4 fw-bold text-civic mb-0">{{ stats['kpi']['total'] }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 bg-white">
+                <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">Cases Resolved</h6>
+                    <h1 class="display-4 fw-bold text-success mb-0">{{ stats['kpi']['resolved'] }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 bg-white">
+                <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">Resolution Rate</h6>
+                    <h1 class="display-4 fw-bold text-primary mb-0">{{ stats['kpi']['rate'] }}%</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-8">
+            <div class="card h-100 p-4 border-0 shadow-sm bg-white">
+                <h6 class="text-uppercase text-civic fw-bold small mb-4">Monthly Report Trends</h6>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100 p-4 border-0 shadow-sm bg-white">
+                <h6 class="text-uppercase text-civic fw-bold small mb-4">Reports by Area</h6>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="areaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5 justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 bg-white">
+                <h6 class="text-uppercase text-danger fw-bold small mb-4"><i class="bi bi-exclamation-triangle-fill me-1"></i> Highly Voted Unresolved Issues</h6>
+                
+                {% if stats['top_issues'] %}
+                    <div class="list-group list-group-flush">
+                        {% for issue in stats['top_issues'] %}
+                            <a href="/issue/{{ issue['id'] }}" class="list-group-item list-group-item-action py-3 px-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-dark">{{ issue['title'] }}</h6>
+                                    <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ issue['area'] }}</small>
+                                </div>
+                                <span class="badge bg-danger rounded-pill px-3">{{ issue['upvote_count'] }} Votes</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-success">
+                        <i class="bi bi-check-circle display-4 mb-3 d-block"></i>
+                        <h6 class="fw-bold">All caught up</h6>
+                        <p class="text-muted small">No highly voted issues pending.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 mb-5">
+        <a href="/" class="btn btn-outline-primary px-4 fw-bold">Back to Reports Feed</a>
+    </div>
+
+</div>
+
+<script>
+    Chart.defaults.color = '#475569';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ stats['chart']['labels'] | safe }},
+            datasets: [{
+                label: 'Issues Raised',
+                data: {{ stats['chart']['raised'] | safe }},
+                backgroundColor: '#cbd5e1', 
+                borderRadius: 4
+            }, {
+                label: 'Issues Resolved',
+                data: {{ stats['chart']['resolved'] | safe }},
+                backgroundColor: '#1d4ed8',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { 
+                    position: 'top',
+                } 
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, grid: { color: '#e2e8f0', borderDash: [5, 5] } }
+            }
+        }
+    });
+
+    const ctxArea = document.getElementById('areaChart').getContext('2d');
+    new Chart(ctxArea, {
+        type: 'doughnut',
+        data: {
+            labels: {{ stats['area_chart']['labels'] | safe }},
+            datasets: [{
+                data: {{ stats['area_chart']['data'] | safe }},
+                backgroundColor: ['#1d4ed8', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                hoverOffset: 4,
+                borderWidth: 1,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
+{% endblock %}

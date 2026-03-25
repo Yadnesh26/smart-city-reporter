@@ -1,0 +1,244 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4 h-100 d-flex flex-column bg-light">
+
+    <!-- HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom border-2 gap-3">
+        <div>
+            <h3 class="fw-bold text-civic mb-1">Civic Operations Dashboard</h3>
+            <span class="badge bg-primary rounded-pill"><i class="bi bi-geo-alt-fill"></i> Pune District Hub</span>
+        </div>
+
+        <div class="d-flex gap-2 flex-grow-1 justify-content-end" style="max-width: 700px;">
+            <div class="input-group">
+                <span class="input-group-text bg-white border text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search report description or ID...">
+            </div>
+            
+            <select id="statusFilter" class="form-select w-auto">
+                <option value="all">Any Status</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+            <select id="areaFilter" class="form-select w-auto">
+                <option value="all">All Areas</option>
+                <option value="Baner">Baner</option>
+                <option value="Ravet">Ravet</option>
+                <option value="Aundh">Aundh</option>
+                <option value="Koregaon Park">Koregaon Park</option>
+                <option value="Hingewadi">Hinjawadi</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- METRICS ROW -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm p-4 h-100 border-start border-4 border-primary text-center">
+                <div class="text-uppercase text-muted fw-bold small">Total Reports</div>
+                <div class="fs-2 fw-bold text-dark mt-1">{{ issues|length }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm p-4 h-100 border-start border-4 border-warning text-center">
+                <div class="text-uppercase text-muted fw-bold small">Pending Review</div>
+                <div class="fs-2 fw-bold text-dark mt-1">{{ issues|selectattr("status", "equalto", "Pending")|list|length }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm p-4 h-100 border-start border-4 border-danger text-center">
+                <div class="text-uppercase text-muted fw-bold small">High Priority</div>
+                <div class="fs-2 fw-bold text-dark mt-1">{{ issues|selectattr("upvote_count", "ge", 1)|selectattr("status", "ne", "Resolved")|list|length }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm p-4 h-100 border-start border-4 border-success text-center">
+                <div class="text-uppercase text-muted fw-bold small">Successfully Resolved</div>
+                <div class="fs-2 fw-bold text-dark mt-1">{{ issues|selectattr("status", "equalto", "Resolved")|list|length }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAP & LIST ROW -->
+    <div class="row g-4 mb-4" style="min-height: 500px;">
+        <div class="col-lg-8">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                    <span class="small fw-bold text-civic text-uppercase"><i class="bi bi-map-fill"></i> City Map Overview</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-primary" id="btn-heat" onclick="toggleMap('heat')">Show Heatmap</button>
+                        <button class="btn btn-outline-primary" id="btn-pins" onclick="toggleMap('pins')">Show Pins</button>
+                    </div>
+                </div>
+                <!-- Clean map without CSS filters -->
+                <div id="adminMap" class="h-100 w-100" style="min-height: 450px;"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-danger text-white py-3 border-0">
+                    <span class="small fw-bold text-uppercase"><i class="bi bi-bell-fill"></i> Urgent Prioritized Cases</span>
+                </div>
+                <div class="list-group list-group-flush overflow-auto w-100" style="max-height: 450px;">
+                    {% for issue in issues if issue.status != 'Resolved' and (issue.upvote_count >= 1 or issue|is_overdue) %}
+                    <a href="/issue/{{ issue.id }}/manage" class="list-group-item list-group-item-action p-3">
+                        <div class="d-flex w-100 justify-content-between mb-1">
+                            <h6 class="mb-1 fw-bold text-dark text-truncate" style="max-width: 200px;">{{ issue.title }}</h6>
+                            <small class="text-muted">#{{ issue.id }}</small>
+                        </div>
+                        <p class="mb-1 small text-secondary text-truncate">{{ issue.description }}</p>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt"></i> {{ issue.area }}</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-exclamation-circle-fill"></i> {{ issue.upvote_count }} Votes</span>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="text-center p-5 text-muted">
+                        <i class="bi bi-check-circle fs-1 opacity-50 mb-3 d-block"></i>
+                        <p class="mb-0 fw-bold">No urgent cases reported.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPORT TABLE -->
+    <div class="card border-0 shadow-sm mb-5">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="text-civic fw-bold mb-0 text-uppercase"><i class="bi bi-table"></i> Comprehensive Report List</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="issuesTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Ticket ID</th>
+                        <th>Issue Summary</th>
+                        <th>Location Area</th>
+                        <th>Current Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issues %}
+                    <tr class="issue-row bg-white" data-status="{{ issue.status }}" data-area="{{ issue.area }}">
+                        <td class="ps-4 fw-bold text-muted">#{{ issue.id }}</td>
+                        <td class="fw-semibold text-dark">{{ issue.title }}</td>
+                        <td class="text-muted"><i class="bi bi-geo-alt-fill opacity-50 text-secondary"></i> {{ issue.area }}</td>
+                        <td>
+                            {% if issue.status == 'Resolved' %}
+                            <span class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Resolved</span>
+                            {% elif issue.status == 'Pending' %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Pending</span>
+                            {% else %}
+                            <span class="badge bg-info text-dark"><i class="bi bi-tools"></i> Active</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="/issue/{{ issue.id }}/manage" class="btn btn-sm btn-outline-primary px-3 fw-bold">
+                                Manage
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var map, heatLayer, markersLayer;
+    
+    var mapData = [
+        {% for issue in issues %}
+            {% if issue.latitude and issue.longitude %}
+            {
+                lat: {{ issue.latitude }},
+                lng: {{ issue.longitude }},
+                intensity:  {{ issue.upvote_count + 1 }} 
+            },
+            {% endif %}
+        {% endfor %}
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        var mapContainer = document.getElementById('adminMap');
+        if (!mapContainer) return;
+
+        map = L.map('adminMap').setView([18.5204, 73.8567], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'CivicData Map'
+        }).addTo(map);
+        
+        var heatPoints = mapData.map(p => [p.lat, p.lng, p.intensity]);
+        heatLayer = L.heatLayer(heatPoints, {
+            radius: 25, 
+            blur: 15, 
+            maxZoom: 17,
+            gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
+        });
+
+        markersLayer = L.layerGroup();
+        var redIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        });
+
+        mapData.forEach(p => {
+            L.marker([p.lat, p.lng], {icon: redIcon}).addTo(markersLayer);
+        });
+
+        heatLayer.addTo(map);
+    });
+
+    function toggleMap(mode) {
+        if (map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+        if (map.hasLayer(markersLayer)) map.removeLayer(markersLayer);
+        
+        const bHeat = document.getElementById('btn-heat');
+        const bPins = document.getElementById('btn-pins');
+        bHeat.classList.replace('btn-primary', 'btn-outline-primary');
+        bPins.classList.replace('btn-primary', 'btn-outline-primary');
+
+        if (mode === 'heat') {
+            map.addLayer(heatLayer);
+            bHeat.classList.replace('btn-outline-primary', 'btn-primary');
+        } else {
+            map.addLayer(markersLayer);
+            bPins.classList.replace('btn-outline-primary', 'btn-primary');
+        }
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const areaFilter = document.getElementById('areaFilter');
+    const rows = document.querySelectorAll('.issue-row');
+
+    function filterTable() {
+        const term = searchInput.value.toLowerCase();
+        const status = statusFilter.value;
+        const area = areaFilter.value;
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            const rowStatus = row.getAttribute('data-status');
+            const rowArea = row.getAttribute('data-area');
+            
+            let matchesSearch = text.includes(term);
+            let matchesStatus = (status === 'all') || (rowStatus === status);
+            let matchesArea = (area === 'all') || (rowArea === area);
+
+            row.style.display = (matchesSearch && matchesStatus && matchesArea) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+    areaFilter.addEventListener('change', filterTable);
+</script>
+{% endblock %}

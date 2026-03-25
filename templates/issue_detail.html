@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4">
+        
+        <!-- LEFT PANEL: MAP -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm p-2">
+                {% if issue.latitude and issue.longitude %}
+                <div id="detailMap" class="w-100 rounded" style="min-height: 500px; height: 100%;"></div>
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light rounded" style="min-height: 500px;">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-geo-alt-slash display-4 mb-3 d-block"></i>
+                        <p class="fw-bold text-uppercase">Substandard Location Data</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: DETAILS -->
+        <div class="col-lg-6">
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <span class="small fw-bold text-muted">Ticket #{{ issue.id }}</span>
+                    <a href="/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex gap-2 mb-3">
+                        {% if issue.status == 'Pending' %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Pending Review</span>
+                        {% elif issue.status == 'Resolved' %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Resolved</span>
+                        {% else %}
+                        <span class="badge bg-info text-dark"><i class="bi bi-tools"></i> Active In Progress</span>
+                        {% endif %}
+
+                        <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt"></i> {{ issue.area }}</span>
+                    </div>
+
+                    <h4 class="fw-bold text-dark mb-4">{{ issue.title }}</h4>
+
+                    <h6 class="fw-bold small text-muted text-uppercase mb-2">Report Details</h6>
+                    <p class="text-secondary mb-4">{{ issue.description }}</p>
+
+                    {% if issue.image_filename %}
+                    <h6 class="fw-bold small text-muted text-uppercase mb-2">Attached Image</h6>
+                    <div class="mb-4 rounded overflow-hidden border">
+                        <a href="{{ url_for('static', path='uploads/' + issue.image_filename) }}" target="_blank">
+                            <img src="{{ url_for('static', path='uploads/' + issue.image_filename) }}" class="img-fluid w-100">
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if issue.status == 'Resolved' and issue.resolved_image_filename %}
+                    <div class="p-3 bg-success-subtle border border-success-subtle rounded mb-4">
+                        <h6 class="fw-bold text-success small text-uppercase mb-2"><i class="bi bi-shield-check"></i> Final Resolution Artifact</h6>
+                        <a href="{{ url_for('static', path='uploads/' + issue.resolved_image_filename) }}" target="_blank">
+                            <img src="{{ url_for('static', path='uploads/' + issue.resolved_image_filename) }}" class="img-fluid rounded w-100">
+                        </a>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- PUBLIC VOTING PANEL -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <h6 class="fw-bold text-civic mb-3">Are you tracking this issue too?</h6>
+                    <form action="/upvote/{{ issue.id }}" method="POST">
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold w-100 rounded-pill">
+                            <i class="bi bi-hand-thumbs-up"></i> Confirm / Upvote ({{ issue.upvote_count }})
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% if issue.latitude and issue.longitude %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var map = L.map('detailMap', { zoomControl: false }).setView([{{ issue.latitude }}, {{ issue.longitude }}], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'CivicData Maps'
+        }).addTo(map);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        var redIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        });
+
+        L.marker([{{ issue.latitude }}, {{ issue.longitude }}], {icon: redIcon})
+            .addTo(map)
+            .bindPopup("<strong>{{ issue.title|e }}</strong>");
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4">
+        
+        <!-- LEFT: Map and Visuals -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-civic"><i class="bi bi-map"></i> Incident Location</span>
+                    <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Dashboard</a>
+                </div>
+                <div class="card-body p-2">
+                    {% if issue.latitude and issue.longitude %}
+                    <div id="caseMap" class="w-100 rounded" style="height: 350px;"></div>
+                    {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded" style="height: 350px;">
+                        <span class="text-muted"><i class="bi bi-camera-slash me-2"></i> No map coordinates provided</span>
+                    </div>
+                    {% endif %}
+
+                    {% if issue.image_filename %}
+                    <div class="mt-3">
+                        <span class="fw-bold small text-muted text-uppercase mb-2 d-block px-2">Original Sourced Image</span>
+                        <a href="{{ url_for('static', path='uploads/' + issue.image_filename) }}" target="_blank">
+                            <img src="{{ url_for('static', path='uploads/' + issue.image_filename) }}" class="img-fluid rounded w-100 border" style="max-height: 250px; object-fit: cover;">
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Case File & Management -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm bg-white h-100">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <span class="badge bg-light text-dark border px-3 py-2 mb-3">Ticket ID: #{{ issue.id }}</span>
+                    <h3 class="fw-bold text-dark mb-4">{{ issue.title }}</h3>
+                    
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <small class="text-muted text-uppercase fw-bold">District</small>
+                            <div class="fw-semibold">{{ issue.area }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted text-uppercase fw-bold">Date Filed</small>
+                            <div class="fw-semibold">{{ issue.created_at[:10] }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <small class="text-muted text-uppercase fw-bold mb-2 d-block">Full Description</small>
+                        <p class="text-secondary bg-light p-3 rounded border">{{ issue.description }}</p>
+                    </div>
+
+                    <hr class="mb-4">
+
+                    <!-- ADMIN UPDATE FORM -->
+                    <h5 class="fw-bold text-civic mb-3"><i class="bi bi-pencil-square me-2"></i> Update Operations Status</h5>
+                    
+                    <form action="/issue/{{ issue.id }}/manage" method="POST" enctype="multipart/form-data">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Triage Status</label>
+                            <select name="status" class="form-select form-select-lg">
+                                <option value="Pending" {% if issue.status=='Pending' %}selected{% endif %}>Pending Processing</option>
+                                <option value="In Progress" {% if issue.status=='In Progress' %}selected{% endif %}>Active Operations</option>
+                                <option value="Resolved" {% if issue.status=='Resolved' %}selected{% endif %}>Task Resolved</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark small">Proof of Completion (Optional / Required if Resolved)</label>
+                            <input type="file" name="resolved_image" class="form-control bg-light" accept="image/*">
+                            <div class="form-text small text-secondary mt-1">Upload a photo proving the issue has been cleared from exactly the mapped location.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm">
+                            Save Changes to Case File
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% if issue.latitude and issue.longitude %}
+<script>
+    var map = L.map('caseMap', { zoomControl: false }).setView([{{ issue.latitude }}, {{ issue.longitude }}], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'CivicData'
+    }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    var redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        iconSize: [25, 41], iconAnchor: [12, 41]
+    });
+    L.marker([{{ issue.latitude }}, {{ issue.longitude }}], {icon: redIcon}).addTo(map);
+</script>
+{% endif %}
+{% endblock %}
