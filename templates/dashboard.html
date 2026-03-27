@@ -184,13 +184,19 @@
         });
 
         markersLayer = L.layerGroup();
-        var redIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-            iconSize: [25, 41], iconAnchor: [12, 41]
+        var pinIcon = L.divIcon({
+            className: '',
+            html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+                <path d="M14 0C6.27 0 0 6.27 0 14c0 9.33 14 22 14 22S28 23.33 28 14C28 6.27 21.73 0 14 0z" fill="#1565C0"/>
+                <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+            </svg>`,
+            iconSize: [28, 36],
+            iconAnchor: [14, 36],
+            popupAnchor: [0, -36]
         });
 
         mapData.forEach(p => {
-            L.marker([p.lat, p.lng], {icon: redIcon}).addTo(markersLayer);
+            L.marker([p.lat, p.lng], {icon: pinIcon}).addTo(markersLayer);
         });
 
         heatLayer.addTo(map);

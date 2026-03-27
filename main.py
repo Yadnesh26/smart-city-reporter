@@ -15,7 +15,7 @@ import crud
 app = FastAPI(title="CivicConnect V2")
 
 # ==========================================
-# 1. APP CONFIGURATION & SETUP
+# 1. APP CONFIGURATION & SETUP 
 # ==========================================
 
 # Mount Static Files & Templates
@@ -35,7 +35,7 @@ def on_startup():
     print(f"Startup Maintenance: Deleted {deleted_count} old resolved issues.")
 
 # ==========================================
-# 2. UTILITY FUNCTIONS
+# 2. UTILITY FUNCTIONS FOR PROJECT
 # ==========================================
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
